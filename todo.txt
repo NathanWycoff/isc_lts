@@ -1,0 +1,5 @@
+Things that won't be done during the hackathon, but should be eventually:
+
+1) Smarter matrix inversions and determinant calculations using special structure, or, barring that, do something smarter than inverting matrices.
+2) Bayes Factors instead of P-values, Could do 4-D integration, but probably can analytically get one more of the params out of there.
+3) Be smarter about the l bounds we're giving to minimize

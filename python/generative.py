@@ -27,14 +27,15 @@ def gen_lts(V, P, T, rho, tau_z, tau_y):
     sigma_y = np.empty(V)
     for v in range(V):
         # Draw from a spike-slab U[-1, 1] with prob rho on phi
+        # Draw from a spike-slab truncated normal for variance of latent AR process 
         isactive[v] = np.random.binomial(1, rho)
         if isactive[v]:
             phi[v] = np.random.uniform(low = -1, high = 1, size = 1)
+            sigma_z[v] = abs(np.random.normal(loc = 0, scale = tau_z))
         else:
             phi[v] = 0
+            sigma_z[v] = 0
         
-        # Draw from a truncated normal for variance of latent AR process 
-        sigma_z[v] = abs(np.random.normal(loc = 0, scale = tau_z))
         # Draw from a truncated normal for variance of observed data
         sigma_y[v] = abs(np.random.normal(loc = 0, scale = tau_y))
 

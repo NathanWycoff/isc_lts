@@ -2,7 +2,7 @@
 #  R/verify_ar_var.R Author "Nathan Wycoff <nathanbrwycoff@gmail.com>" Date 09.27.2018
 
 ## Verify my analytic formula for an AR process's variance
-Y <- 4
+Y <- 3
 phi <- 0.8
 sigma_z <- 2
 
