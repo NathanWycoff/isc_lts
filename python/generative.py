@@ -9,12 +9,12 @@
 import numpy as np
 from scipy.stats import truncnorm
 
-def gen_lts(V, P, T, rho, tau_z, tau_y):
+def gen_lts(V, N, T, rho, tau_z, tau_y):
     """
     Generate data from the Latent Time Series Model for Inter-Subject Correlation
 
     :param: V Number of voxels
-    :param: P Number of participants
+    :param: N Number of participants
     :param: T Number of time points
     :param: rho Hyperparam on proportion of important voxels
     :param: tau_z Variance Hyperparam on AR process variance for each voxel
@@ -47,10 +47,10 @@ def gen_lts(V, P, T, rho, tau_z, tau_y):
             Z[v,t] = np.random.normal(loc = phi[v] * Z[v,t-1], scale = sigma_z[v])
 
     # Draw observed data
-    Y = np.empty([V,T,P])
+    Y = np.empty([V,T,N])
     for v in range(V):
         for t in range(T):
-            for p in range(P):
+            for p in range(N):
                 Y[v,t,p] = np.random.normal(loc = Z[v,t], scale = sigma_y[v])
 
     retd = {'isactive' : isactive, 'phi' : phi, 'sigma_z' : sigma_z, \

@@ -3,6 +3,8 @@
 #  python/maxlik.py Author "Nathan Wycoff <nathanbrwycoff@gmail.com>" Date 09.27.2018
 
 ## Maximize the likelihood with Z integrated out.
+from scipy.optimize import minimize
+from scipy.stats import norm
 
 logdet = lambda A: np.linalg.slogdet(A)[1]
 sqmag = lambda x: np.sum([np.square(xi) for xi in x])
@@ -21,7 +23,7 @@ def form_ar_cov(phi, sigmaz2, T):
     
     return SIGMAz
 
-def llik(theta, Y):
+def llik_lts(theta, Y):
     """
     Likelihood with Z integrated out of the params
 
@@ -45,3 +47,24 @@ def llik(theta, Y):
             +0.5 * muz.T.dot(SIGMAzi).dot(muz) + \
             -0.5 * np.matrix.trace(Y.T.dot(Y)) / sigma2
     return(ll[0,0])
+
+def mle_lts(Y):
+    # To prevent L-BFGS-B from actually trying a zero variance
+    minvar = 1e-2
+    to_opt = lambda theta: -llik_lts(theta, Y)
+    bounds = [(minvar, np.inf), (-1, 1), (minvar, np.inf)]
+    ret = minimize(to_opt, [1, 0, 1], bounds = bounds, \
+            method = 'L-BFGS-B')
+    return {'theta' : ret['x'], 'll' : -ret['fun']}
+
+def lrt_lts_i(Y):
+    y = np.reshape(Y, [T*N])
+    ll_null = sum(norm.logpdf(y, loc = np.mean(y), scale = np.std(y)))
+    ll_lts = mle_lts(Y)['ll']
+    return ll_null - ll_lts
+
+def lrt_lts(Ys):
+    lrts = np.empty(Ys.shape[0])
+    for i in range(Ys.shape[0]):
+        lrts[i] = lrt_lts_i(Ys[i,:,:])
+    return lrts
