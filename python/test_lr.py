@@ -17,30 +17,9 @@ tau_y = 1# variance Hyperparam on AR process variance for each voxel
 
 gen = gen_lts(V, N, T, rho, tau_z, tau_y)
 
-
 lrts = lrt_lts(gen['Y'])
 
 on = [bool(x) for x in gen['isactive']]
 off = [not x for x in on]
 np.mean(lrts[on])
 np.mean(lrts[off])
-
-on = [bool(x) for x in gen['isactive']]
-off = [not x for x in on]
-Y_on = gen['Y'][on,:,:]
-Y_off = gen['Y'][off,:,:]
-print('--------------------------------------------')
-print('ons')
-on_lrts = []
-for i in np.where(on)[0]:
-    Y = gen['Y'][i,:,:]
-    lrt = lrt_lts(Y)
-    print(lrt)
-print('--------------------------------------------')
-print('offs')
-
-on_lrts = []
-for i in np.where(off)[0]:
-    Y = gen['Y'][i,:,:]
-    lrt = lrt_lts(Y)
-    print(lrt)

@@ -48,18 +48,23 @@ def llik_lts(theta, Y):
             -0.5 * np.matrix.trace(Y.T.dot(Y)) / sigma2
     return(ll[0,0])
 
-def mle_lts(Y):
+def mle_lts(Y, bound = False):
     # To prevent L-BFGS-B from actually trying a zero variance
     minvar = 1e-2
     to_opt = lambda theta: -llik_lts(theta, Y)
-    bounds = [(minvar, np.inf), (-1, 1), (minvar, np.inf)]
+    if bound:
+        bounds = [(minvar, np.inf), (0, 0), (minvar, minvar)]
+    else:
+        bounds = [(minvar, np.inf), (-1, 1), (minvar, np.inf)]
     ret = minimize(to_opt, [1, 0, 1], bounds = bounds, \
             method = 'L-BFGS-B')
     return {'theta' : ret['x'], 'll' : -ret['fun']}
 
+
 def lrt_lts_i(Y):
-    y = np.reshape(Y, [T*N])
-    ll_null = sum(norm.logpdf(y, loc = np.mean(y), scale = np.std(y)))
+    #y = np.reshape(Y, [T*N])
+    #ll_null = sum(norm.logpdf(y, loc = 0, scale = np.std(y)))
+    ll_null = mle_lts(Y, bound = True)['ll']
     ll_lts = mle_lts(Y)['ll']
     return ll_null - ll_lts
 
