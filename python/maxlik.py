@@ -50,7 +50,7 @@ def llik_lts(theta, Y):
 
 def mle_lts(Y, bound = False):
     # To prevent L-BFGS-B from actually trying a zero variance
-    minvar = 1e-2
+    minvar = 1e-4
     to_opt = lambda theta: -llik_lts(theta, Y)
     if bound:
         bounds = [(minvar, np.inf), (0, 0), (minvar, minvar)]
@@ -62,14 +62,16 @@ def mle_lts(Y, bound = False):
 
 
 def lrt_lts_i(Y):
-    #y = np.reshape(Y, [T*N])
-    #ll_null = sum(norm.logpdf(y, loc = 0, scale = np.std(y)))
-    ll_null = mle_lts(Y, bound = True)['ll']
+    y = np.reshape(Y, [T*N])
+    ll_null = sum(norm.logpdf(y, loc = 0, scale = np.std(y)))
+    #ll_null = mle_lts(Y, bound = True)['ll']
     ll_lts = mle_lts(Y)['ll']
     return ll_null - ll_lts
 
-def lrt_lts(Ys):
+def lrt_lts(Ys, verb = True):
     lrts = np.empty(Ys.shape[0])
     for i in range(Ys.shape[0]):
+        if verb:
+            print i
         lrts[i] = lrt_lts_i(Ys[i,:,:])
     return lrts
