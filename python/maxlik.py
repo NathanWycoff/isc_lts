@@ -5,6 +5,7 @@
 ## Maximize the likelihood with Z integrated out.
 from scipy.optimize import minimize
 from scipy.stats import norm
+from numpy import np
 
 logdet = lambda A: np.linalg.slogdet(A)[1]
 sqmag = lambda x: np.sum([np.square(xi) for xi in x])
