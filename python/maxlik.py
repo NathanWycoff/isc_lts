@@ -11,7 +11,7 @@ sqmag = lambda x: np.sum([np.square(xi) for xi in x])
 
 def form_ar_cov(phi, sigmaz2, T):
     """
-    Form the AR covariance matrix
+    Form the AR 1 covariance matrix
     """
     pd = 0
     SIGMAz = np.empty(shape = [T, T])
@@ -23,12 +23,23 @@ def form_ar_cov(phi, sigmaz2, T):
     
     return SIGMAz
 
+def invdet_ar_cov(phi, sigmaz2, T):
+    """
+    Form the inverse of the AR 1 covariance matrix as well as its determinant
+    """
+    pd = 0
+    SIGMAzi = np.empty(shape = [T, T])
+
+    SIGMAzi *= 1.0/sigmaz2
+    
+    return SIGMAzi
+
 def llik_lts(theta, Y):
     """
-    Likelihood with Z integrated out of the params
+    Log likelihood with Z integrated out of the params
 
     :param: theta A vector with parameters [sigma2, phi, sigmaz2]
-    :param: A T by N matrix giving the observed data.
+    :param: Y T by N matrix giving the observed data.
     """
     sigma2, phi, sigmaz2 = theta
     T = Y.shape[0]
@@ -49,8 +60,14 @@ def llik_lts(theta, Y):
     return(ll[0,0])
 
 def mle_lts(Y, bound = False):
+    """
+    Maximize the LTS likelihood.
+
+    :param: Y T by N matrix giving the observed data.
+    :param: bound If true, we conduct the optimization under the null hypothesis, constraining the latent AR coefficient phi to be zero, and the latent time series variance to be (approximately) zero as well.
+    """
     # To prevent L-BFGS-B from actually trying a zero variance
-    minvar = 1e-4
+    minvar = 1e-8
     to_opt = lambda theta: -llik_lts(theta, Y)
     if bound:
         bounds = [(minvar, np.inf), (0, 0), (minvar, minvar)]
@@ -60,15 +77,23 @@ def mle_lts(Y, bound = False):
             method = 'L-BFGS-B')
     return {'theta' : ret['x'], 'll' : -ret['fun']}
 
-
 def lrt_lts_i(Y):
+    """
+    Likelihood ratio test for determining whether a single voxel is active.
+
+    Returns -2 times the logliklihood.
+    """
     y = np.reshape(Y, [T*N])
-    ll_null = sum(norm.logpdf(y, loc = 0, scale = np.std(y)))
-    #ll_null = mle_lts(Y, bound = True)['ll']
+    # TODO: Determine which of these two next lines is best.
+    #ll_null = sum(norm.logpdf(y, loc = 0, scale = np.std(y)))
+    ll_null = mle_lts(Y, bound = True)['ll']
     ll_lts = mle_lts(Y)['ll']
-    return ll_null - ll_lts
+    return -2 * (ll_null - ll_lts)
 
 def lrt_lts(Ys, verb = True):
+    """
+    Likelihood ratio test for determining active voxels.
+    """
     lrts = np.empty(Ys.shape[0])
     for i in range(Ys.shape[0]):
         if verb:
