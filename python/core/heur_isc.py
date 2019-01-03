@@ -4,6 +4,7 @@
 
 ## Implement the heuristic ISC procedure describred in 
 import numpy as np
+from tqdm import tqdm
 
 def cor(a, b):
     """
@@ -22,7 +23,7 @@ def heur_isc(Y):
     """
     V, T, N = np.shape(Y)
     R = np.empty([V,N])
-    for v in range(V):
+    for v in tqdm(range(V)):
         Yv = Y[v,:,:]
         for i in range(N):
             n1 = Yv[:,[ii for ii in range(N) if not ii == i]]

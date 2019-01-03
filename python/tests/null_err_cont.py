@@ -8,10 +8,10 @@ import numpy as np
 from sklearn.metrics import roc_curve
 import matplotlib.pyplot as plt
 from scipy.stats import chi2
-execfile('python/maxlik.py')
-execfile('python/generative.py')
-execfile('python/lib.py')
-execfile('python/heur_isc.py')
+execfile('python/core/maxlik.py')
+execfile('python/core/generative.py')
+execfile('python/core/lib.py')
+execfile('python/core/heur_isc.py')
 
 # Generate a bunch of data
 V = 1000# Number of voxels

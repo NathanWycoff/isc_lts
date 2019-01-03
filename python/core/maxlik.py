@@ -5,7 +5,8 @@
 ## Maximize the likelihood with Z integrated out.
 from scipy.optimize import minimize
 from scipy.stats import norm
-from numpy import np
+import numpy as np
+from tqdm import tqdm
 
 logdet = lambda A: np.linalg.slogdet(A)[1]
 sqmag = lambda x: np.sum([np.square(xi) for xi in x])
@@ -84,9 +85,6 @@ def lrt_lts_i(Y):
 
     Returns -2 times the logliklihood.
     """
-    y = np.reshape(Y, [T*N])
-    # TODO: Determine which of these two next lines is best.
-    #ll_null = sum(norm.logpdf(y, loc = 0, scale = np.std(y)))
     ll_null = mle_lts(Y, bound = True)['ll']
     ll_lts = mle_lts(Y)['ll']
     return -2 * (ll_null - ll_lts)
@@ -96,9 +94,7 @@ def lrt_lts(Ys, verb = True):
     Likelihood ratio test for determining active voxels.
     """
     lrts = np.empty(Ys.shape[0])
-    for i in range(Ys.shape[0]):
-        if verb:
-            print i
+    for i in tqdm(range(Ys.shape[0])):
         lrts[i] = lrt_lts_i(Ys[i,:,:])
     return lrts
 
