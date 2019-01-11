@@ -43,7 +43,8 @@ def gen_lts(V, N, T, rho, tau_z, tau_y):
     # Draw latent variables
     Z = np.empty([V,T])
     for v in range(V):
-        Z[v,0] = np.random.normal(loc = 0, scale = sigma_z[v])
+        # Note: variance inflated for first observation in order to mimick infinitely long process before observation.
+        Z[v,0] = np.random.normal(loc = 0, scale = sigma_z[v] / np.sqrt((1 - pow(phi[v],2))))
         for t in range(1, T):
             Z[v,t] = np.random.normal(loc = phi[v] * Z[v,t-1], scale = sigma_z[v])
 

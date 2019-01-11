@@ -6,14 +6,14 @@
 import numpy as np
 from scipy.optimize import minimize
 from scipy.stats import norm
-execfile('python/maxlik.py')
-execfile('python/generative.py')
+execfile('python/core/maxlik.py')
+execfile('python/core/generative.py')
 
 ### Now draw some data from our model, test consistency
 V = 1# Number of voxels
-N = 50# Number of participants
-T = 40# Number of time points
-rho = 0 # Hyperparam on important voxels
+N = 500# Number of participants
+T = 400# Number of time points
+rho = 1.0 # Hyperparam on important voxels
 tau_z = 1# variance Hyperparam on AR process variance for each voxel
 tau_y = 1# variance Hyperparam on AR process variance for each voxel
 
