@@ -39,6 +39,27 @@ def form_ar_cov(phi, sigmaz2, T):
 #
 #
 
+def tridiag_det(A):
+    """
+    Calculate the determinant of a tridiagonal matrix
+
+    A should be an np array
+    """
+    if (type(A) is not np.ndarray):
+        raise ValueError("A must be a np.ndarray")
+    if (A.shape[0] is not A.shape[1]):
+        raise ValueError("A must be square.")
+    N = A.shape[0]
+    f = np.empty(N+2)
+    f[0] = 0
+    f[1] = 1
+    f[2] = A[1,1]
+    for n in range(3,N+2):
+        f[n] = A[n-2,n-2] * f[n-1] - A[n-2,n-3] * A[n-3,n-2] * f[n-2]
+
+    return(f[-1])
+
+
 def ar_prec_ldet(phi, sigmaz2, T):
     """
     Efficient Calculation of the log determinant of the AR 1 precision matrix
