@@ -11,33 +11,107 @@ from tqdm import tqdm
 logdet = lambda A: np.linalg.slogdet(A)[1]
 sqmag = lambda x: np.sum([np.square(xi) for xi in x])
 
-def form_ar_cov(phi, sigmaz2, T):
-    """
-    Form the AR 1 covariance matrix
-    """
-    pd = 0
-    SIGMAz = np.empty(shape = [T, T])
-    for t1 in range(T):
-        pd += pow(np.square(phi), t1)
-        for t2 in range(t1, T):
-            SIGMAz[t1, t2] = SIGMAz[t2, t1] = pow(phi, t2 - t1) * pd
-    SIGMAz *= sigmaz2
-    
-    return SIGMAz
-
 #def form_ar_cov(phi, sigmaz2, T):
 #    """
 #    Form the AR 1 covariance matrix
 #    """
+#    pd = 0
 #    SIGMAz = np.empty(shape = [T, T])
 #    for t1 in range(T):
+#        pd += pow(np.square(phi), t1)
 #        for t2 in range(t1, T):
-#            SIGMAz[t1, t2] = SIGMAz[t2, t1] = pow(phi, t2 - t1)
-#    SIGMAz *= sigmaz2 / (1.0 - pow(phi, 2))
+#            SIGMAz[t1, t2] = SIGMAz[t2, t1] = pow(phi, t2 - t1) * pd
+#    SIGMAz *= sigmaz2
 #    
 #    return SIGMAz
+
+def form_ar_cov(phi, sigmaz2, T):
+    """
+    Form the AR 1 covariance matrix
+    """
+    SIGMAz = np.empty(shape = [T, T])
+    for t1 in range(T):
+        for t2 in range(t1, T):
+            SIGMAz[t1, t2] = SIGMAz[t2, t1] = pow(phi, t2 - t1)
+    SIGMAz *= sigmaz2 / (1.0 - pow(phi, 2))
+    
+    return SIGMAz
+
+def ar_trid_det(A):
+    """
+    Get the determinant of a tridiagonal matrix with constant off-diagonal terms, and constant diagonals except for the first and last elements, which are equal to each other but not the other diagonal elements in constant time.
+    """
+
+    if T < 5:
+        return(np.linalg.det(A))
+    else:
+        gamma = A[0,0]
+        alpha = A[1,1]
+        beta = A[1,2]
+
+        # Get determinant of "middle matrices"
+        d1 = np.exp(td_const_ldet(alpha, beta, T-2))
+        print(np.abs(np.linalg.det(A[1:-1,1:-1]) - d1))
+        d2 = np.exp(td_const_ldet(alpha, A[1,2], T-3))
+        print(np.abs(np.linalg.det(A[2:-1,2:-1]) - d2))
+        d3 = np.exp(td_const_ldet(alpha, A[1,2], T-4))
+        print(np.abs(np.linalg.det(A[3:-1,3:-1]) - d3))
+
+        # Get determinant of all except last col/row
+        dJ1 = gamma * d1 - pow(beta,2)*d2
+        print(np.abs(np.linalg.det(A[:-1,:-1]) - dJ1))
+        dJ2 = gamma * d2 - pow(beta,2)*d3
+        print(np.abs(np.linalg.det(A[:-2,:-2]) - dJ2))
+
+        # Get determinant of the whole enchilada.
+        detA = gamma * dJ1 - pow(beta,2)*dJ2
+        print(detA - np.linalg.det(A))
+
+
+
+#TODO: Delete this prolly
+# Get good determinant for tridiag
+##NOTE: assumes sigamz2 = 1
+#sigmaz2 = 1
+#SIGMA = form_ar_cov(phi, sigmaz2, T)
+#SIGMAi = np.round(np.linalg.inv(SIGMA),2)
+#gamma = SIGMAi[0,0]
+#alpha = SIGMAi[1,1]
 #
+#A = np.empty([T,T])
+#A[:,:] = SIGMAi
+#A[0,0] = A[T-1,T-1] = A[1,1]
 #
+##Check 1: should be equal
+#np.linalg.slogdet(A)[1]
+#ldetA = td_const_ldet(SIGMAi[1,1], SIGMAi[1,0], T)
+#ldetA
+#
+##Check 2: still good after 1,1 diagonal shift
+#A1 = np.empty([T,T])
+#A1[:] = A
+#A1[0,0] = SIGMAi[0,0]
+#np.linalg.slogdet(A1)[1]
+#ldetA + np.log(np.abs(1 + (gamma - alpha)*sigmaz2/(1-pow(phi,2))))
+
+#TODO: Box this up
+## Approach 2 (T assumed >= 5):
+
+def td_const_ldet(a, b, T):
+    """
+    Calculate the log determinant of a tridiagonal matrix with banded terms, such that every diagonal element is a, and the super and sub diagonal elements are b, and the matrix is TxT.
+
+    A should be an np array
+    """
+    d = np.sqrt(np.square(a) - 4.0 * np.square(b))
+    # Make this split because we are raising something to a potentially large power and
+    # need to be ensure that only happens for something < 1.
+    return(-np.log(d) + (T+1) * (np.log(0.5) + np.log(a+d)) + np.log(1 - pow((a-d)/(a+d), T+1)))
+    #return(-np.log(d) + (pow((a + d)/2,T+1) - pow((a - d) / 2, T+1)))
+    # Next line is probably never needed:
+    #return(-np.log(d) + (T+1) * (np.log(0.5) + np.log(a-d)) + np.log(pow((a+d) / (a-d), T+1) - 1))
+
+
 
 def tridiag_det(A):
     """
@@ -60,24 +134,27 @@ def tridiag_det(A):
     return(f[-1])
 
 
-def ar_prec_ldet(phi, sigmaz2, T):
-    """
-    Efficient Calculation of the log determinant of the AR 1 precision matrix
-    """
-    if (phi > 1 + np.sqrt(np.finfo(float).eps)):
-        raise ValueError("AR process is assumed stationary but we just got passed a phi > 1")
-    ld = T*np.log(sigmaz2)
-    inv = np.zeros([T,T])
-    diag_arg = (1.0 + pow(phi,2)) / sigmaz2
-    od_arg = -phi / float(sigmaz2)
-    for t1 in range(T):
-        if t1 == T-1:
-            inv[t1,t1] = 1.0 / sigmaz2
-        else:
-            inv[t1,t1] = diag_arg
-            inv[t1+1,t1] = inv[t1,t1+1] = od_arg
 
-    return [ld, inv]
+#def ar_prec_ldet(phi, sigmaz2, T):
+#    """
+#    Efficient Calculation of the log determinant of the AR 1 precision matrix
+#    """
+#    if (phi > 1 + np.sqrt(np.finfo(float).eps)):
+#        raise ValueError("AR process is assumed stationary but we just got passed a phi > 1")
+#    ld = T*np.log(sigmaz2)
+#    inv = np.zeros([T,T])
+#    diag_arg = (1.0 - pow(phi,2)) / sigmaz2
+#    od_arg = -phi / float(sigmaz2)
+#    for t1 in range(T):
+#        if t1 == T-1:
+#            #TODO: Decide on one of these two.
+#            #inv[t1,t1] = 1.0 / sigmaz2
+#            inv[t1,t1] = diag_arg
+#        else:
+#            inv[t1,t1] = diag_arg
+#            inv[t1+1,t1] = inv[t1,t1+1] = od_arg
+#
+#    return [ld, inv]
 
 def llik_lts(theta, Y):
     """
@@ -104,7 +181,7 @@ def llik_lts(theta, Y):
             -0.5 * np.matrix.trace(Y.T.dot(Y)) / sigma2
     return(ll[0,0])
 
-def llik_lts_fast(theta, Y):
+def llik_lts_again(theta, Y):
     """
     Log likelihood with Z integrated out of the params
 
@@ -115,19 +192,52 @@ def llik_lts_fast(theta, Y):
     T = Y.shape[0]
     N = Y.shape[1]
     SIGMA = form_ar_cov(phi, sigmaz2, T)
-    SIGMAi = np.linalg.inv(SIGMA)
-
-    SIGMAzi = 1/(sigma2 / N) * np.identity(T) + SIGMAi
-
     ld, SIGMAi = ar_prec_ldet(phi, sigmaz2, T)
 
+    SIGMAzi = 1/(sigma2 / N) * np.identity(T) + SIGMAi
+    ldSIGMAzi = td_const_ldet(SIGMAzi[0,0], SIGMAzi[0,1], T)
     SIGMAz = np.linalg.inv(SIGMAzi)
     muz = np.reshape(np.sum(Y, axis = 1).T / sigma2, [T,1])
 
     C1 = -N / 2.0 * T * np.log(2 * np.pi * sigma2) + \
             -0.5 * (T * np.log(2 * np.pi) + ld)
+            #+0.5 * logdet(2 * np.pi * SIGMAz) + \
     ll = C1 + \
-            +0.5 * logdet(2 * np.pi * SIGMAz) + \
+            +0.5 * (T*np.log(2*np.pi) - ldSIGMAzi) + \
+            +0.5 * muz.T.dot(SIGMAz).dot(muz) + \
+            -0.5 * np.matrix.trace(Y.T.dot(Y)) / sigma2
+    return(ll[0,0])
+
+def llik_lts_fast(theta, Y):
+    """
+    Log likelihood with Z integrated out of the params
+
+    :param: theta A vector with parameters [sigma2, phi, sigmaz2]
+    :param: Y T by N matrix giving the observed data.
+    """
+
+    sigma2, phi, sigmaz2 = theta
+    T = Y.shape[0]
+    N = Y.shape[1]
+    #SIGMA = form_ar_cov(phi, sigmaz2, T)
+    ld, SIGMAi = ar_prec_ldet(phi, sigmaz2, T)
+
+    SIGMAzi = 1.0/(sigma2 / N) * np.identity(T) + SIGMAi
+
+    SIGMAz = np.linalg.inv(SIGMAzi)
+    muz = np.reshape(np.sum(Y, axis = 1).T / sigma2, [T,1])
+
+    # NOTE: PROBLEM: SIGMAzi is only ALMOST tridiagonal.
+    ldSIGMAzi = td_const_ldet(SIGMAzi[0,0], SIGMAzi[0,1], T)
+    #ldSIGMAzi = np.log(1 - np.square(phi)/sigmaz2*(T/sigma2+(1+np.square(phi))/sigmaz2)) + \
+    #        - td_const_ldet(T/sigma2 + (1 + np.square(phi))/sigmaz2, -phi/sigmaz2, T)
+
+    C1 = -N / 2.0 * T * np.log(2 * np.pi * sigma2) + \
+            -0.5 * (T * np.log(2 * np.pi) + ld)
+            #+0.5 * logdet(2 * np.pi * SIGMAz) + \
+            #+0.5 * (T*np.log(2*np.pi) - np.log(tridiag_det(SIGMAzi))) + \
+    ll = C1 + \
+            +0.5 * (T*np.log(2*np.pi) - ldSIGMAzi) + \
             +0.5 * muz.T.dot(SIGMAz).dot(muz) + \
             -0.5 * np.matrix.trace(Y.T.dot(Y)) / sigma2
     return(ll[0,0])
