@@ -37,8 +37,7 @@ def ar_prec_ldet(phi, sigmaz2, T):
     SIGMAi = np.diag(np.repeat(alpha,T)) + np.diag(np.repeat(beta, T-1), 1) + np.diag(np.repeat(beta, T-1), -1)
     SIGMAi[0,0] = SIGMAi[T-1,T-1] = gamma
 
-    det = ar_trid_det(SIGMAi)
-    ldet = np.log(np.abs(det))
+    ldet = ar_trid_det(SIGMAi)
 
     return [ldet, SIGMAi]
 
@@ -65,18 +64,24 @@ def ar_trid_det(A):
         beta = A[1,2]
 
         # Get determinant of "middle matrices"
-        d1 = np.exp(td_const_ldet(alpha, beta, T-2))
-        d2 = np.exp(td_const_ldet(alpha, A[1,2], T-3))
-        d3 = np.exp(td_const_ldet(alpha, A[1,2], T-4))
+        ld1 = td_const_ldet(alpha, beta, T-2)
+        ld2 = td_const_ldet(alpha, A[1,2], T-3)
+        ld3 = td_const_ldet(alpha, A[1,2], T-4)
+        #d1 = np.exp(td_const_ldet(alpha, beta, T-2))
+        #d2 = np.exp(td_const_ldet(alpha, A[1,2], T-3))
+        #d3 = np.exp(td_const_ldet(alpha, A[1,2], T-4))
 
         # Get determinant of all except last col/row
-        dJ1 = gamma * d1 - pow(beta,2)*d2
-        dJ2 = gamma * d2 - pow(beta,2)*d3
+        ldJ1 = ld1 + np.log(gamma-pow(beta,2)*np.exp(ld2-ld1))
+        ldJ2 = ld2 + np.log(gamma-pow(beta,2)*np.exp(ld3-ld2))
+        #dJ1 = gamma * d1 - pow(beta,2)*d2
+        #dJ2 = gamma * d2 - pow(beta,2)*d3
 
         # Get determinant of the whole enchilada.
-        detA = gamma * dJ1 - pow(beta,2)*dJ2
+        ldetA = ldJ1 + np.log(gamma - pow(beta,2)*np.exp(ldJ2-ldJ1))
+        #detA = gamma * dJ1 - pow(beta,2)*dJ2
 
-        return(detA)
+        return(ldetA)
 
 def llik_lts(theta, Y):
     """
@@ -124,7 +129,7 @@ def llik_lts_fast(theta, Y):
     #SIGMAz = np.linalg.inv(SIGMAzi)
     muz = np.reshape(np.sum(Y, axis = 1).T / sigma2, [T,1])
 
-    ldSIGMAzi = np.log(np.abs(ar_trid_det(SIGMAzi)))
+    ldSIGMAzi = ar_trid_det(SIGMAzi)
 
     # Get SIGMAzi into banded form.
     banded_form = [[0] + list(np.diag(SIGMAzi,1)), 

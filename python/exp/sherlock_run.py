@@ -4,8 +4,8 @@
 
 ## Apply both methods to the Sherlock data and compare and store the results.
 import numpy as np
-execfile('python/core/heur_isc.py')
-execfile('python/core/maxlik.py')
+exec(open('python/core/heur_isc.py').read())
+exec(open("python/core/maxlik.py").read())
 
 # Data processed in python/exp/data_playground.py 
 mask = np.load('data/mask.npy')

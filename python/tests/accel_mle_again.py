@@ -32,7 +32,7 @@ det
 np.random.seed(123)
 V = 1# Number of voxels
 N = 3# Number of participants
-T = 1000# Number of time points
+T = 10# Number of time points
 rho = 1.0 # Hyperparam on important voxels
 tau_z = 1# variance Hyperparam on AR process variance for each voxel
 tau_y = 1# variance Hyperparam on AR process variance for each voxel
@@ -48,3 +48,44 @@ theta = [true_sig, true_phi, true_sigz]
 print(llik_lts(theta, Y))
 print(llik_lts_fast(theta, Y))
 
+## Check likelihood at scale
+np.random.seed(123)
+V = 1# Number of voxels
+N = 3# Number of participants
+T = 10881# Number of time points
+# The desired T for the sherlock problem is 108815
+rho = 1.0 # Hyperparam on important voxels
+tau_z = 1# variance Hyperparam on AR process variance for each voxel
+tau_y = 1# variance Hyperparam on AR process variance for each voxel
+
+gen = gen_lts(V, N, T, rho, tau_z, tau_y)
+Y = gen['Y'][0,:,:]
+
+true_sig = gen['sigma_y'][0]
+true_phi = gen['phi'][0]
+true_sigz = gen['sigma_z'][0]
+theta = [true_sig, true_phi, true_sigz]
+
+#print(llik_lts(theta, Y))
+print(llik_lts_fast(theta, Y))
+
+## Check consistency
+np.random.seed(123)
+V = 1# Number of voxels
+N = 3# Number of participants
+T = 10881# Number of time points
+# The desired T for the sherlock problem is 108815
+rho = 1.0 # Hyperparam on important voxels
+tau_z = 1# variance Hyperparam on AR process variance for each voxel
+tau_y = 1# variance Hyperparam on AR process variance for each voxel
+
+gen = gen_lts(V, N, T, rho, tau_z, tau_y)
+Y = gen['Y'][0,:,:]
+
+true_sig = gen['sigma_y'][0]
+true_phi = gen['phi'][0]
+true_sigz = gen['sigma_z'][0]
+theta = [true_sig, true_phi, true_sigz]
+
+#print(llik_lts(theta, Y))
+print(llik_lts_fast(theta, Y))
